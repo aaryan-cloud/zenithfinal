@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Project Zenith — The Celestial Eye</title>
+<meta name="description" content="Real-time cosmic radar for any location on Earth. Track the ISS, satellites, planets and constellations passing above you." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='none' stroke='%234cc9ff' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%23a855f7' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%234cc9ff'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- Boot loading state -->
+<div class="boot-loader" id="bootLoader" aria-hidden="true">
+  <svg viewBox="0 0 64 64" width="58" height="58"><circle cx="32" cy="32" r="28" fill="none" stroke="#4cc9ff" stroke-width="3"/><circle cx="32" cy="32" r="14" fill="none" stroke="#a855f7" stroke-width="3"/><circle cx="32" cy="32" r="4" fill="#4cc9ff"/></svg>
+  <span>CALIBRATING THE CELESTIAL EYE…</span>
+</div>
+
+<!-- Animated starfield background -->
+<canvas id="starfield" aria-hidden="true"></canvas>
+<div class="nebula nebula-a" aria-hidden="true"></div>
+<div class="nebula nebula-b" aria-hidden="true"></div>
+
+<!-- ════════ NAVIGATION ════════ -->
+<nav class="nav" id="nav">
+  <a class="nav__logo" href="#hero">
+    <span class="nav__logo-icon">
+      <svg viewBox="0 0 64 64" width="28" height="28"><circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="32" cy="32" r="14" fill="none" stroke="#a855f7" stroke-width="3"/><circle cx="32" cy="32" r="4" fill="currentColor"/></svg>
+    </span>
+    <span>PROJECT&nbsp;ZENITH</span>
+  </a>
+  <button class="nav__burger" id="navBurger" aria-label="Menu"><span></span><span></span><span></span></button>
+  <div class="nav__links" id="navLinks">
+    <a href="#skymap">Sky Map</a>
+    <a href="#radar">Radar</a>
+    <a href="#orbits">Orbits</a>
+    <a href="#guide">Cosmic Guide</a>
+    <a href="#timetravel">Time Travel</a>
+    <a href="#events">Events</a>
+    <a href="#blueprint">Blueprint</a>
+  </div>
+  <div class="nav__status">
+    <span class="pulse-dot"></span>
+    <span id="navClock">--:--:--</span> UTC
+  </div>
+</nav>
+
+<!-- ════════ 1 · HERO ════════ -->
+<header class="hero" id="hero">
+  <div class="hero__inner">
+    <div class="hero__badge"><span class="pulse-dot"></span> LIVE CELESTIAL TRACKING · <span id="heroObjCount">17</span> OBJECTS MONITORED</div>
+    <h1 class="hero__title">
+      <span class="hero__title-line">PROJECT ZENITH</span>
+      <span class="hero__title-sub">THE CELESTIAL EYE</span>
+    </h1>
+    <p class="hero__subtitle">Real-time cosmic radar for any location on Earth.<br/>
+    Point the Eye anywhere on the planet and watch the universe pass overhead.</p>
+    <div class="hero__cta">
+      <a href="#skymap" class="btn btn--primary btn--lg">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
+        Explore the Sky Above You
+      </a>
+      <a href="#blueprint" class="btn btn--ghost btn--lg">Mission Blueprint</a>
+    </div>
+    <div class="hero__stats">
+      <div class="hero__stat"><strong id="statVisible">—</strong><span>objects above horizon</span></div>
+      <div class="hero__stat"><strong>2 s</strong><span>refresh cadence</span></div>
+      <div class="hero__stat"><strong>±24 h</strong><span>time-travel range</span></div>
+      <div class="hero__stat"><strong>510 M km²</strong><span>of Earth covered</span></div>
+    </div>
+  </div>
+  <div class="hero__scroll" aria-hidden="true"><span></span></div>
+</header>
+
+<main>
+
+<!-- ════════ 2 · INTERACTIVE GLOBE ════════ -->
+<section class="section" id="skymap">
+  <div class="section__head">
+    <span class="section__kicker">01 · GROUND STATION</span>
+    <h2>Choose Your Window to the Cosmos</h2>
+    <p>Search a city, drop precise coordinates, or lock onto your own position. The Eye recalibrates instantly.</p>
+  </div>
+
+  <div class="skymap__grid">
+    <div class="panel skymap__controls">
+      <label class="field">
+        <span class="field__label">Search city</span>
+        <div class="field__search">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="citySearch" placeholder="Try “Tokyo”, “Nairobi”, “Reykjavik”…" autocomplete="off" />
+        </div>
+        <div class="search-results" id="searchResults"></div>
+      </label>
+
+      <div class="field-row">
+        <label class="field">
+          <span class="field__label">Latitude</span>
+          <input type="number" id="latInput" min="-90" max="90" step="0.0001" value="28.6139" />
+        </label>
+        <label class="field">
+          <span class="field__label">Longitude</span>
+          <input type="number" id="lonInput" min="-180" max="180" step="0.0001" value="77.2090" />
+        </label>
+      </div>
+
+      <div class="field-row">
+        <button class="btn btn--primary" id="applyCoords">Set Coordinates</button>
+        <button class="btn btn--ghost" id="useMyLocation">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+          Use My Location
+        </button>
+      </div>
+
+      <div class="locator-card">
+        <div class="locator-card__row">
+          <span class="locator-card__label">LOCKED TARGET</span>
+          <span class="chip chip--live"><span class="pulse-dot"></span> TRACKING</span>
+        </div>
+        <h3 id="locName">New Delhi, India</h3>
+        <div class="locator-card__data">
+          <div><span>LAT</span><strong id="locLat">28.6139°</strong></div>
+          <div><span>LON</span><strong id="locLon">77.2090°</strong></div>
+          <div><span>LOCAL SIDEREAL</span><strong id="locLST">—</strong></div>
+          <div><span>SUN</span><strong id="locSun">—</strong></div>
+        </div>
+      </div>
+
+      <p class="hint">Drag to rotate · <strong>click anywhere on the globe</strong> to drop the Eye there · the cyan ring is the ISS ground track</p>
+    </div>
+
+    <div class="panel panel--globe">
+      <canvas id="globeCanvas"></canvas>
+      <div class="globe__overlay">
+        <span class="chip" id="issChip"><span class="pulse-dot pulse-dot--purple"></span> ISS · SIMULATED ORBIT</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 3 · CELESTIAL RADAR DASHBOARD ════════ -->
+<section class="section" id="radar">
+  <div class="section__head">
+    <span class="section__kicker">02 · THE CELESTIAL EYE</span>
+    <h2>Radar Dashboard</h2>
+    <p>A live polar sweep of everything above your horizon — zenith at the bullseye, horizon at the rim.</p>
+    <div class="data-status" id="dataStatus"><span class="chip">CONNECTING DATA SOURCES…</span></div>
+  </div>
+
+  <div class="radar__grid">
+    <div class="panel panel--radar">
+      <div class="zenith-banner" id="zenithBanner">
+        <span class="zenith-banner__label">NEAREST ZENITH OBJECT</span>
+        <strong>scanning…</strong>
+        <span class="zenith-banner__meta"></span>
+      </div>
+      <canvas id="radarCanvas"></canvas>
+      <div class="radar__legend">
+        <span><i class="dot dot--station"></i>Station</span>
+        <span><i class="dot dot--satellite"></i>Satellite</span>
+        <span><i class="dot dot--planet"></i>Planet / Moon</span>
+        <span><i class="dot dot--constellation"></i>Constellation</span>
+      </div>
+    </div>
+
+    <div class="radar__cards">
+      <div class="filter-tabs" id="filterTabs">
+        <button class="filter-tab is-active" data-filter="all">All</button>
+        <button class="filter-tab" data-filter="station">Stations</button>
+        <button class="filter-tab" data-filter="satellite">Satellites</button>
+        <button class="filter-tab" data-filter="planet">Planets</button>
+        <button class="filter-tab" data-filter="constellation">Constellations</button>
+      </div>
+      <div class="cards-grid" id="cardsGrid"><!-- object cards injected --></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 4 · LIVE ORBIT ANIMATION ════════ -->
+<section class="section" id="orbits">
+  <div class="section__head">
+    <span class="section__kicker">03 · ORBITAL THEATRE</span>
+    <h2>Live Orbit Animation</h2>
+    <p>Satellite constellations in motion around Earth. Objects glowing gold are near <em>your</em> zenith right now.</p>
+  </div>
+  <div class="panel panel--orbits">
+    <canvas id="orbitCanvas"></canvas>
+    <div class="orbits__hud">
+      <div class="orbits__hud-title">NEAR ZENITH</div>
+      <ul id="zenithList"><li class="muted">Scanning…</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 5 · AI COSMIC GUIDE ════════ -->
+<section class="section" id="guide">
+  <div class="section__head">
+    <span class="section__kicker">04 · AI COSMIC GUIDE</span>
+    <h2>Your Sky, Narrated</h2>
+    <p>The Guide reads the live ephemeris for your location and turns raw orbital math into a story.</p>
+  </div>
+  <div class="panel guide__panel">
+    <div class="guide__header">
+      <div class="guide__avatar">
+        <svg viewBox="0 0 64 64" width="34" height="34"><circle cx="32" cy="32" r="28" fill="none" stroke="#4cc9ff" stroke-width="3"/><circle cx="32" cy="32" r="14" fill="none" stroke="#a855f7" stroke-width="3"/><circle cx="32" cy="32" r="4" fill="#4cc9ff"/></svg>
+      </div>
+      <div>
+        <strong>ZENITH GUIDE</strong>
+        <span class="guide__sub" id="guideContext">analysing sky…</span>
+      </div>
+      <button class="btn btn--ghost btn--sm" id="regenGuide">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/></svg>
+        Re-read the sky
+      </button>
+    </div>
+    <p class="guide__text" id="guideText"><span class="guide__caret"></span></p>
+  </div>
+</section>
+
+<!-- ════════ 6 · TIME TRAVEL SKY MODE ════════ -->
+<section class="section" id="timetravel">
+  <div class="section__head">
+    <span class="section__kicker">05 · TEMPORAL CONTROL</span>
+    <h2>Time Travel Sky Mode</h2>
+    <p>Scrub through the last and next 24 hours. Every panel — radar, globe, guide, cards — follows the dial.</p>
+  </div>
+  <div class="panel timetravel__panel">
+    <div class="timetravel__readout">
+      <div class="timetravel__mode" id="ttMode">NOW</div>
+      <div class="timetravel__time" id="ttTime">—</div>
+      <button class="btn btn--ghost btn--sm" id="ttReset">↺ Snap back to now</button>
+    </div>
+    <div class="timetravel__slider">
+      <span class="timetravel__edge">−24 h<br/><em>PAST</em></span>
+      <input type="range" id="ttSlider" min="-24" max="24" step="0.25" value="0" />
+      <span class="timetravel__edge">+24 h<br/><em>FUTURE</em></span>
+    </div>
+    <div class="tt-presets" id="ttPresets">
+      <button class="tt-preset" data-h="-24">−24 h</button>
+      <button class="tt-preset is-active" data-h="0">Now</button>
+      <button class="tt-preset" data-h="0.5">+30 m</button>
+      <button class="tt-preset" data-h="1">+1 h</button>
+      <button class="tt-preset" data-h="6">+6 h</button>
+      <button class="tt-preset" data-h="24">Tomorrow</button>
+    </div>
+    <div class="timetravel__chips" id="ttChips"><!-- dynamic change summaries --></div>
+  </div>
+</section>
+
+<!-- ════════ 7 · SPACE EVENTS PANEL ════════ -->
+<section class="section" id="events">
+  <div class="section__head">
+    <span class="section__kicker">06 · MISSION CALENDAR</span>
+    <h2>Upcoming Space Events</h2>
+    <p>Computed flyovers and conjunctions for your location, plus the season’s headline sky shows.</p>
+  </div>
+  <div class="events__grid">
+    <div class="panel events__col">
+      <h3 class="events__title"><span class="events__icon events__icon--iss">🛰</span> ISS Flyovers <small>computed for your location</small></h3>
+      <ul class="events__list" id="issEvents"><li class="muted">Computing passes…</li></ul>
+    </div>
+    <div class="panel events__col">
+      <h3 class="events__title"><span class="events__icon events__icon--meteor">☄</span> Meteor Showers</h3>
+      <ul class="events__list" id="meteorEvents"></ul>
+    </div>
+    <div class="panel events__col">
+      <h3 class="events__title"><span class="events__icon events__icon--conj">✶</span> Conjunctions <small>computed from ephemeris</small></h3>
+      <ul class="events__list" id="conjEvents"><li class="muted">Scanning next 60 days…</li></ul>
+    </div>
+    <div class="panel events__col">
+      <h3 class="events__title"><span class="events__icon events__icon--eclipse">🌘</span> Eclipse Alerts</h3>
+      <ul class="events__list" id="eclipseEvents"></ul>
+    </div>
+    <div class="panel events__col">
+      <h3 class="events__title"><span class="events__icon events__icon--moon">🌙</span> Moon &amp; Sky Conditions <small>computed for your location</small></h3>
+      <ul class="events__list" id="skyEvents"><li class="muted">Reading the sky…</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 9 · ROUND 1 BLUEPRINT ════════ -->
+<section class="section" id="blueprint">
+  <div class="section__head">
+    <span class="section__kicker">07 · ROUND 1 BLUEPRINT</span>
+    <h2>How We Build the Full Celestial Eye</h2>
+    <p>This demo runs on a hand-built ephemeris engine. Here is the production flight plan.</p>
+  </div>
+
+  <div class="blueprint__grid">
+    <div class="panel blueprint__card">
+      <div class="blueprint__num">A</div>
+      <h3>Data Strategy</h3>
+      <ul class="blueprint__list">
+        <li><strong>NASA JPL Horizons</strong> — authoritative planetary &amp; small-body ephemerides via REST.</li>
+        <li><strong>Open Notify / WhereTheISS</strong> — live ISS position &amp; crew telemetry (already wired into this demo).</li>
+        <li><strong>CelesTrak TLEs + SGP4</strong> — 9,000+ tracked satellites propagated client-side.</li>
+        <li><strong>Open-Meteo Geocoding</strong> — keyless global city search (live in this demo).</li>
+      </ul>
+    </div>
+    <div class="panel blueprint__card">
+      <div class="blueprint__num">B</div>
+      <h3>Tech Stack</h3>
+      <ul class="blueprint__list">
+        <li><strong>satellite.js (SGP4)</strong> — already live in this build, propagating real TLE element sets.</li>
+        <li><strong>astronomy-engine</strong> — VSOP87-class Sun/Moon/planet ephemeris, also live in this build.</li>
+        <li><strong>Next.js + React + TypeScript + Tailwind</strong> — production migration path, typed and edge-cached.</li>
+        <li><strong>CesiumJS</strong> photoreal globe; <strong>Leaflet</strong> fallback for low-power devices.</li>
+      </ul>
+    </div>
+    <div class="panel blueprint__card">
+      <div class="blueprint__num">C</div>
+      <h3>Feasibility</h3>
+      <ul class="blueprint__list blueprint__list--timeline">
+        <li><span>Week 1</span> Data layer: Horizons + CelesTrak ingestion, pass-prediction service.</li>
+        <li><span>Week 2</span> Cesium globe, radar dashboard, location pipeline.</li>
+        <li><span>Week 3</span> AI Guide (LLM over structured ephemeris), Time Travel, events engine.</li>
+        <li><span>Week 4</span> Polish, accessibility, load testing, deploy on Vercel edge.</li>
+      </ul>
+    </div>
+    <div class="panel blueprint__card">
+      <div class="blueprint__num">D</div>
+      <h3>Innovation</h3>
+      <ul class="blueprint__list">
+        <li><strong>AI Cosmic Guide</strong> — ephemeris-grounded narration; zero hallucinated skies.</li>
+        <li><strong>Time Travel Mode</strong> — one scrubber rewinds or fast-forwards the entire universe.</li>
+        <li><strong>Near-zenith detection</strong> — the Eye always knows what is most directly overhead.</li>
+        <li><strong>AR Sky View &amp; pass push-alerts</strong> <em>(future)</em> — point your phone at the sky, get “ISS in 10 min” pings.</li>
+      </ul>
+    </div>
+    <div class="panel blueprint__card">
+      <div class="blueprint__num">E</div>
+      <h3>Accuracy Approach</h3>
+      <ul class="blueprint__list">
+        <li><strong>SGP4 propagation</strong> of NORAD two-line elements — the same model used by ground stations.</li>
+        <li><strong>VSOP87-class planetary theory</strong> via astronomy-engine: arc-second-level geometry, refraction-corrected horizons.</li>
+        <li><strong>Topocentric corrections</strong> — every altitude/azimuth is computed for the exact observer coordinates.</li>
+        <li><strong>Validation</strong> — cross-checked against Heavens-Above pass times and the Polaris-altitude ≈ latitude invariant.</li>
+      </ul>
+    </div>
+    <div class="panel blueprint__card">
+      <div class="blueprint__num">F</div>
+      <h3>Offline Fallback Strategy</h3>
+      <ul class="blueprint__list">
+        <li><strong>Cached TLE set</strong> ships in the bundle — SGP4 keeps working with zero connectivity.</li>
+        <li><strong>Dual ephemeris engines</strong> — if the vendored library fails, a hand-built Keplerian engine takes over seamlessly.</li>
+        <li><strong>Offline city index</strong> — 60 world cities searchable without a network.</li>
+        <li><strong>Live upgrades, never dependencies</strong> — CelesTrak, wheretheiss.at and geocoding enhance the data when reachable.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer__inner">
+    <span class="footer__logo">✦ PROJECT ZENITH</span>
+    <span>The Celestial Eye · built for the stars, rendered for the judges.</span>
+    <span class="footer__tag">Ephemeris computed in-browser · no API keys · works offline</span>
+  </div>
+</footer>
+
+<!-- ════════ 8 · OBJECT DETAIL MODAL ════════ -->
+<div class="modal" id="modal" aria-hidden="true">
+  <div class="modal__backdrop" id="modalBackdrop"></div>
+  <div class="modal__dialog" role="dialog" aria-modal="true">
+    <button class="modal__close" id="modalClose" aria-label="Close">✕</button>
+    <div class="modal__head">
+      <span class="modal__type" id="modalType">PLANET</span>
+      <h3 id="modalName">Jupiter</h3>
+      <span class="chip" id="modalStatus">Visible</span>
+    </div>
+    <p class="modal__desc" id="modalDesc"></p>
+    <div class="modal__grid">
+      <div class="modal__stat"><span>DISTANCE FROM EARTH</span><strong id="modalDist">—</strong></div>
+      <div class="modal__stat"><span>ALTITUDE</span><strong id="modalAlt">—</strong></div>
+      <div class="modal__stat"><span>AZIMUTH</span><strong id="modalAz">—</strong></div>
+      <div class="modal__stat"><span>NEXT EVENT</span><strong id="modalNext">—</strong></div>
+      <div class="modal__stat modal__stat--wide"><span>ORBIT / VISIBILITY</span><strong id="modalOrbit">—</strong></div>
+      <div class="modal__stat modal__stat--wide"><span>DATA SOURCE</span><strong id="modalSource">—</strong></div>
+    </div>
+    <div class="modal__traj">
+      <div class="modal__traj-label">SKY TRAJECTORY · ±6 H AROUND SELECTED TIME</div>
+      <canvas id="trajCanvas"></canvas>
+    </div>
+    <div class="modal__fact">
+      <span>✦ FUN FACT</span>
+      <p id="modalFact"></p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/vendor/satellite.min.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/data.js"></script>
+<script src="js/services/tle-service.js"></script>
+<script src="js/services/ephemeris-service.js"></script>
+<script src="js/services/iss-service.js"></script>
+<script src="js/visuals.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
